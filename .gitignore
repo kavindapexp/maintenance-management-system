@@ -1,0 +1,29 @@
+# .NET
+**/bin/
+**/obj/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Node / React
+**/node_modules/
+**/dist/
+**/.vite/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Local development configuration
+appsettings.Local.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# ASP.NET Core local configuration
+**/appsettings.json
