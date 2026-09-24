@@ -1,4 +1,5 @@
 using MaintenanceManagement.Api.Data;
+using MaintenanceManagement.Api.Dtos;
 using MaintenanceManagement.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,58 @@ public class BusinessController : ControllerBase
 
     [HttpGet("asset-valuations")]
     public Task<List<AssetValuation>> AssetValuations() => _db.AssetValuations.AsNoTracking().OrderByDescending(x => x.ValuationDate).ToListAsync();
+
+    [HttpGet("asset-overview")]
+    public async Task<ActionResult<List<AssetOverviewItemDto>>> AssetOverview()
+    {
+        var assets = await (
+            from assetValue in _db.AssetValues.AsNoTracking()
+            join equipment in _db.Equipment.AsNoTracking()
+                on assetValue.EquipmentId equals equipment.EquipmentId
+            join site in _db.Sites.AsNoTracking()
+                on equipment.SiteId equals site.SiteId
+            join company in _db.Companies.AsNoTracking()
+                on site.CompanyId equals company.CompanyId
+            join currency in _db.Currencies.AsNoTracking()
+                on assetValue.CurrencyId equals currency.CurrencyId
+            select new
+            {
+                equipment.EquipmentId,
+                AssetCode = equipment.EquipmentCode,
+                AssetName = equipment.EquipmentName,
+                Owner = company.CompanyName,
+                AssetValue = assetValue.AcquisitionCost,
+                currency.CurrencyCode
+            }).ToListAsync();
+
+        var equipmentIds = assets.Select(x => x.EquipmentId).ToList();
+        var depreciationByEquipment = await _db.Depreciations
+            .AsNoTracking()
+            .Where(x => equipmentIds.Contains(x.EquipmentId))
+            .GroupBy(x => x.EquipmentId)
+            .Select(group => group
+                .OrderByDescending(x => x.DepreciationDate)
+                .ThenByDescending(x => x.DepreciationId)
+                .Select(x => new { x.EquipmentId, x.AccumulatedAmount })
+                .First())
+            .ToDictionaryAsync(x => x.EquipmentId, x => x.AccumulatedAmount);
+
+        return Ok(assets.Select(asset =>
+        {
+            depreciationByEquipment.TryGetValue(asset.EquipmentId, out var depreciation);
+            return new AssetOverviewItemDto
+            {
+                EquipmentId = asset.EquipmentId,
+                AssetCode = asset.AssetCode,
+                AssetName = asset.AssetName,
+                Owner = asset.Owner,
+                AssetValue = asset.AssetValue,
+                Depreciation = depreciation,
+                FinalValue = asset.AssetValue - depreciation,
+                CurrencyCode = asset.CurrencyCode
+            };
+        }).ToList());
+    }
 
     [HttpGet("currencies")]
     public Task<List<Currency>> Currencies() => _db.Currencies.AsNoTracking().OrderBy(x => x.CurrencyCode).ToListAsync();
