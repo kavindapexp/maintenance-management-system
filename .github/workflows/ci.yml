@@ -45,3 +45,20 @@ jobs:
 
       - name: Build frontend Docker image
         run: docker build -f ./frontend/FrontendDockerfile -t maintenance-frontend:ci ./frontend
+
+
+      - name: Scan API image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: 'maintenance-api:ci'
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+
+      - name: Scan frontend image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: 'maintenance-frontend:ci'
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
