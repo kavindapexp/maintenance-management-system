@@ -27,3 +27,6 @@ Thumbs.db
 
 # ASP.NET Core local configuration
 **/appsettings.json
+
+#passwords file
+.env
