@@ -30,3 +30,5 @@ Thumbs.db
 
 #passwords file
 .env
+# Database dumps
+*.sql

@@ -39,3 +39,9 @@ jobs:
       - name: Build frontend
         working-directory: ./frontend
         run: npm run build
+
+      - name: Build API Docker image
+        run: docker build -f ./src/MaintenanceManagement.Api/MaintenanceManagementDockerfile -t maintenance-api:ci ./src/MaintenanceManagement.Api
+
+      - name: Build frontend Docker image
+        run: docker build -f ./frontend/FrontendDockerfile -t maintenance-frontend:ci ./frontend
